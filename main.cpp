@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
             }
         }
         if (start != -1) {
-            lines.push_back({y, start, y, height - 1});
+            lines.push_back({y, start, y, width - 1});
         }
     }
     std::cout << lines.size() << std::endl;
