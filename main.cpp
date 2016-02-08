@@ -9,11 +9,12 @@ int main(int argc, char* argv[]) {
     int width;
     int height;
     std::cin >> height >> width;
+    std::cin.ignore();
 
-	std::vector<std::string> m(height);
-	for (int y = 0; y < height; ++y) {
+    std::vector<std::string> m(height);
+    for (int y = 0; y < height; ++y) {
         std::getline(std::cin, m[y]);
-	}
+    }
 
     std::vector<Line> lines;
 
