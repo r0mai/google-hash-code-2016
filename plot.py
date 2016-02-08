@@ -31,6 +31,8 @@ def dump_json(name):
                 if line[x] == '#':
                     data.append(dict(x=x, y=y))
         with open('input/{}.js'.format(name), 'wb') as g:
+            g.write('var rows = {};\n'.format(rows))
+            g.write('var cols = {};\n'.format(cols))
             g.write('var original =\n')
             g.write(json.dumps(data, indent=2))
             g.write(';\n')

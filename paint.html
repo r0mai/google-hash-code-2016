@@ -7,6 +7,7 @@
 
 canvas {
 	border: 1px solid #aaa;
+	cursor: crosshair;
 }
 
 </style>
@@ -17,10 +18,16 @@ $(function(){
 var g = {
 	canvas: $('#canvas'),
 	ctx: $('#canvas')[0].getContext("2d"),
-	height: 40,
-	width: 200,
+	height: rows,
+	width: cols,
 	scale: 6,
-	pixels: original,
+	original: original,
+	pixels: [],
+	down: false,
+	startPos: null,
+	pos: null,
+	rect: null,
+	mode: 'horz',
 };
 
 
@@ -47,21 +54,64 @@ function redraw() {
 		g.ctx.stroke();
 	}
 
+
 	for (var i = 0; i < g.pixels.length; ++i) {
 		var pos = g.pixels[i];
-		putPixel(pos.x, pos.y);
+		drawPixel(pos.x, pos.y, 1);
+	}
+
+	for (var i = 0; i < g.original.length; ++i) {
+		var pos = g.original[i];
+		drawPixel(pos.x, pos.y, 0);
+	}
+
+	if (g.down) {
+		if (g.mode == 'square') {
+			var x0 = Math.min(g.startPos.x, g.pos.x);
+			var y0 = Math.min(g.startPos.y, g.pos.y);
+			var w = Math.abs(g.startPos.x - g.pos.x) + 1;
+			var h = Math.abs(g.startPos.y - g.pos.y) + 1;
+			var w0 = w, h0 = h;
+			w = Math.floor((w - 1) / 2) * 2 + 1;
+			h = Math.floor((h - 1) / 2) * 2 + 1;
+			w = h = Math.max(w, h);
+
+			g.ctx.strokeStyle = '#92ca30';
+			g.ctx.lineWidth = 1;
+			g.ctx.strokeRect(x0 * g.scale, y0 * g.scale, w * g.scale, h * g.scale);
+		}
+		else if (g.mode == 'horz') {
+			if (g.rect) {
+				var x0 = g.rect.pos0.x;
+				var x1 = g.rect.pos1.x;
+				var y0 = g.rect.pos0.y;
+				var y1 = g.rect.pos1.y;
+				var w = x1 - x0 + 1;
+				var h = y1 - y0 + 1;
+
+				g.ctx.strokeStyle = '#F70A94';
+				g.ctx.lineWidth = 1;
+				g.ctx.strokeRect(x0 * g.scale, y0 * g.scale, w * g.scale, h * g.scale);
+			}
+		}
 	}
 }
 
 
-function getCanvasPos(canvas, evt) {
+function getCanvasPos(evt) {
     return {
         x: Math.floor(evt.offsetX / g.scale),
         y: Math.floor(evt.offsetY / g.scale)
     };
 }
 
-function putPixel(x, y) {
+function drawPixel(x, y, kind) {
+	var fs = [
+		'rgba(0, 0, 70, 0.5)',
+		'rgba(200, 0, 0, 0.5)',
+	];
+	g.ctx.fillStyle = fs[kind];
+
 	g.ctx.fillRect(
 		x * g.scale,
 		y * g.scale,
@@ -70,18 +120,152 @@ function putPixel(x, y) {
 }
 
 function addPixel(x, y) {
-	for (var i = 0; i < g.pixels; ++i) {
+	for (var i = 0; i < g.pixels.length; ++i) {
 		var pos = g.pixels[i];
 		if (pos.x == x && pos.y == y) { return; }
 	}
 	g.pixels.push({x: x, y: y});
 }
 
+function sortNumbers(xs) {
+	xs.sort(function(a, b) { return a - b; });
+}
+
+function findHorz(hit) {
+	var xs = [];
+	for (var i = 0; i < g.original.length; ++i) {
+		var pos = g.original[i];
+		if (pos.y == hit.y) {
+			xs.push(pos.x);
+		}
+	}
+	sortNumbers(xs);
+	var line = findValue(xs, hit.x);
+	if (line) {
+		return {
+			pos0: { x: line.first, y: hit.y },
+			pos1: { x: line.last, y: hit.y }
+		};
+	}
+}
+
+function findValue(xs, value) {
+	if (xs.length == 0) { return; }
+	var regions = [];
+
+	var first = 0;
+	var last = 0;
+
+	for (var i = 1; i < xs.length; ++i) {
+		if (xs[i] == xs[last] + 1) {
+			last = i;
+		}
+		else {
+			regions.push({x0: xs[first], x1: xs[last]});
+			first = last = i;
+		}
+	}
+	regions.push({x0: xs[first], x1: xs[last]});
+
+	for (var i = 0; i < regions.length; ++i) {
+		var item = regions[i];
+		if (item.x0 <= value && value <= item.x1) {
+			return {first: item.x0, last: item.x1 };
+		}
+	}
+}
+
+function findLinearRegions(axis, ortoPos, xs) {
+	if (xs.length == 0) { return []; }
+	var regions = [];
+
+	var first = 0;
+	var last = 0;
+	var pushRegion = function() {
+		regions.push({
+			axis: axis,
+			ortoPos: ortoPos,
+			begin: xs[first],
+			end: xs[last] + 1,
+			length: xs[last] - xs[first] + 1
+		});
+	};
+
+	for (var i = 1; i < xs.length; ++i) {
+		if (xs[i] == xs[last] + 1) {
+			last = i;
+		}
+		else {
+			pushRegion();
+			first = last = i;
+		}
+	}
+	pushRegion();
+	return regions;
+}
+
+
+function findRegions() {
+	var xs = {};
+	var ys = {};
+	var regions = [];
+
+	for (var i = 0; i < g.original.length; ++i) {
+		var pos = g.original[i];
+		var x = pos.x;
+		var y = pos.y;
+		(xs[y] = xs[y] || []).push(x);
+		(ys[x] = ys[x] || []).push(y);
+	}
+
+	for (var y in xs) {
+		sortNumbers(xs[y]);
+		regions = regions.concat(findLinearRegions('x', y, xs[y]));
+	}
+
+	for (var x in ys) {
+		sortNumbers(ys[x]);
+		regions = regions.concat(findLinearRegions('y', x, ys[x]));
+	}
+
+	return regions;
+}
+
+
+function calcRegions() {
+	var regions = findRegions();
+}
+
+
+
+// $('#canvas').on('click', function(e){
+//     var pos = getCanvasPos(this, e);
+//     addPixel(pos.x, pos.y);
+//     redraw();
+// });
 
 $('#canvas').on('mousedown', function(e){
-    var pos = getCanvasPos(this, e);
-    addPixel(pos.x, pos.y);
-    redraw();
+	g.down = true;
+	g.startPos = getCanvasPos(e);
+	g.pos = getCanvasPos(e);
+	if (g.mode == 'horz') {
+		g.rect = findHorz(g.pos);
+	}
+	redraw();
+
+});
+
+
+$('#canvas').on('mouseup', function(e){
+	g.down = false;
+	var end = getCanvasPos(e);
+});
+
+$('#canvas').on('mousemove', function(e){
+	g.pos = getCanvasPos(e);
+	if (g.down) {
+		redraw();
+	}
 });
 
 
@@ -89,7 +273,7 @@ $('#canvas').on('mousedown', function(e){
 
 init();
 redraw();
-
+calcRegions();
 
 });
 </script>

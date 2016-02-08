@@ -1,3 +1,5 @@
+var rows = 40;
+var cols = 200;
 var original =
 [
   {
