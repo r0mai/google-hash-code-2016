@@ -5,16 +5,9 @@ struct Line {
     int r2, c2;
 };
 
-int main(int argc, char* argv[]) {
-    int width;
-    int height;
-    std::cin >> height >> width;
-    std::cin.ignore();
-
-    std::vector<std::string> m(height);
-    for (int y = 0; y < height; ++y) {
-        std::getline(std::cin, m[y]);
-    }
+std::vector<Line> scanLine(const std::vector<std::string>& m) {
+    int width = m[0].size();
+    int height = m.size();
 
     std::vector<Line> lines;
 
@@ -36,6 +29,23 @@ int main(int argc, char* argv[]) {
             lines.push_back({y, start, y, width - 1});
         }
     }
+
+    return lines;
+}
+
+int main(int argc, char* argv[]) {
+    int width;
+    int height;
+    std::cin >> height >> width;
+    std::cin.ignore();
+
+    std::vector<std::string> m(height);
+    for (int y = 0; y < height; ++y) {
+        std::getline(std::cin, m[y]);
+    }
+
+    std::vector<Line> lines = scanLine(m);
+
     std::cout << lines.size() << std::endl;
     for (const Line& line : lines) {
         std::cout << "PAINT_LINE "
@@ -44,5 +54,5 @@ int main(int argc, char* argv[]) {
             << line.r2 << ' '
             << line.c2 << std::endl;
     }
-	return 0;
+    return 0;
 }
