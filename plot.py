@@ -29,9 +29,9 @@ def dump_json(name):
             line = get(strip)
             for x in xrange(cols):
                 if line[x] == '#':
-                    data.append([x, y])
+                    data.append(dict(x=x, y=y))
         with open('input/{}.js'.format(name), 'wb') as g:
-            g.write('var pixels =\n')
+            g.write('var original =\n')
             g.write(json.dumps(data, indent=2))
             g.write(';\n')
 

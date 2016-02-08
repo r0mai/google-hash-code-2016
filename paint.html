@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script language="javascript" type="text/javascript" src="jquery.js"></script>
+<script language="javascript" type="text/javascript" src="input/right_angle.js"></script>
+<style type="text/css">
+
+canvas {
+	border: 1px solid #aaa;
+}
+
+</style>
+<script language="javascript">
+$(function(){
+
+
+var g = {
+	canvas: $('#canvas'),
+	ctx: $('#canvas')[0].getContext("2d"),
+	height: 40,
+	width: 200,
+	scale: 6,
+	pixels: original,
+};
+
+
+function init() {
+	g.canvas.attr('width', g.width * g.scale);
+	g.canvas.attr('height', g.height * g.scale);
+}
+
+function redraw() {
+	g.ctx.clearRect(0, 0, g.width * g.scale, g.height * g.scale);
+	// grid
+	g.ctx.strokeStyle = '#aaa';
+	g.ctx.lineWidth = 0.1;
+	for (var x = 0; x < g.width; ++x) {
+		g.ctx.beginPath();
+		g.ctx.moveTo(x * g.scale, 0);
+		g.ctx.lineTo(x * g.scale, g.height * g.scale);
+		g.ctx.stroke();
+	}
+	for (var y = 0; y < g.height; ++y) {
+		g.ctx.beginPath();
+		g.ctx.moveTo(0, y * g.scale);
+		g.ctx.lineTo(g.width * g.scale, y * g.scale);
+		g.ctx.stroke();
+	}
+
+	for (var i = 0; i < g.pixels.length; ++i) {
+		var pos = g.pixels[i];
+		putPixel(pos.x, pos.y);
+	}
+}
+
+
+function getCanvasPos(canvas, evt) {
+    return {
+        x: Math.floor(evt.offsetX / g.scale),
+        y: Math.floor(evt.offsetY / g.scale)
+    };
+}
+
+function putPixel(x, y) {
+	g.ctx.fillRect(
+		x * g.scale,
+		y * g.scale,
+		g.scale,
+		g.scale);
+}
+
+function addPixel(x, y) {
+	for (var i = 0; i < g.pixels; ++i) {
+		var pos = g.pixels[i];
+		if (pos.x == x && pos.y == y) { return; }
+	}
+	g.pixels.push({x: x, y: y});
+}
+
+
+$('#canvas').on('mousedown', function(e){
+    var pos = getCanvasPos(this, e);
+    addPixel(pos.x, pos.y);
+    redraw();
+});
+
+
+// -- main --
+
+init();
+redraw();
+
+
+});
+</script>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+</body>
+</html>
