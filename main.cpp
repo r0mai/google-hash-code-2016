@@ -78,7 +78,7 @@ struct Erase : public Command {
 
 	virtual std::string str() const override {
 		std::stringstream ss;
-		ss << "ERASE__CELL "
+		ss << "ERASE_CELL "
 			<< r << ' '
 			<< c << std::endl;
 		return ss.str();
