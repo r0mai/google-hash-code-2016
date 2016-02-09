@@ -2,8 +2,8 @@
 
 struct Command {
     virtual ~Command() {}
-    virtual void draw(std::vector<std::string>& img) const {};
-    virtual std::string str() const { return ""; }
+    virtual void draw(std::vector<std::string>& img) const = 0;
+    virtual std::string str() const = 0;
 };
 
 struct Line : public Command {
