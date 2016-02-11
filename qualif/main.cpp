@@ -175,10 +175,32 @@ Simulation read(std::istream& in = std::cin) {
     return s;
 }
 
+int getPreferredWarehouse(Simulation s, const std::vector<int>& ps) {
+    std::vector<int> warehouse_score(s.warehouses.size());
+    for (int p : ps) {
+        for (int i = 0; i < s.warehouses.size(); ++i) {
+            auto& w = s.warehouses[i];
+            if (w.product_counts[p] > 0) {
+                ++warehouse_score[i];
+                --w.product_counts[p];
+            }
+        }
+    }
+    return std::max_element(
+            warehouse_score.begin(),
+            warehouse_score.end()) - warehouse_score.begin();
+}
+
+struct Value {
+    Value(int drone, int w) : drone(drone), warehouse(w) {}
+    int drone;
+    int warehouse;
+};
+
 std::vector<Command> moho(Simulation s) {
-    Warehouse& w = s.warehouses[0];
+    auto& w = s.warehouses;
     for (Order& o : s.orders) {
-        o.score = (distance(w, o)) + ((long long)getWeigth(o, s) << 32);
+        o.score = (distance(w[0], o)) + ((long long)getWeigth(o, s) << 32);
     }
 
     std::sort(s.orders.begin(), s.orders.end(),
@@ -187,39 +209,65 @@ std::vector<Command> moho(Simulation s) {
         }
     );
 
-    std::multimap<int, int> drones;
+    std::multimap<int, Value> drones;
     for (int i = 0; i < s.drone_count; ++i) {
-        drones.insert(std::make_pair(0, i));
+        for (int j = 0; j < w.size(); ++j) {
+            drones.insert(std::make_pair(distance(w[0], w[j]), Value{i, j}));
+        }
     }
 
     std::vector<Command> commands;
-    for (const Order& o : s.orders) {
-        auto ps = o.products;
+    for (Order& o : s.orders) {
+        auto& ps = o.products;
 
         while (!ps.empty()) {
             auto drone = *drones.begin();
-            drones.erase(drones.begin());
+            auto warehouse = getPreferredWarehouse(s, ps);
+
+            int drone_time = -1;
+            int drone_index = -1;
+            for (auto it = drones.begin(), end = drones.end(); it != end; ++it) {
+                if (it->second.warehouse == warehouse) {
+                    drone_index = it->second.drone;
+                    drone_time = it->first;
+                    break;
+                }
+            }
+            for (auto it = drones.begin(); it != drones.end(); ) {
+                if (it->second.drone == drone_index) {
+                    it = drones.erase(it);
+                } else {
+                    ++it;
+                }
+            }
 
             std::vector<Command> deliver_commands;
 
             int leftover_capacity = s.max_drone_load;
             for (int i = 0; i < ps.size(); ++i) {
-                if (leftover_capacity >= s.product_weights[ps[i]]) {
+                if (s.warehouses[warehouse].product_counts[ps[i]] > 0 &&
+                    leftover_capacity >= s.product_weights[ps[i]])
+                {
                     if (!deliver_commands.empty() && commands.back().product_id == ps[i]) {
                         ++commands.back().product_count;
                         ++deliver_commands.back().product_count;
                     } else {
-                        commands.push_back(Load(drone.second, 0, ps[i], 1));
-                        deliver_commands.push_back(Deliver(drone.second, o.index, ps[i], 1));
+                        commands.push_back(Load(drone_index, warehouse, ps[i], 1));
+                        deliver_commands.push_back(Deliver(drone_index, o.index, ps[i], 1));
                     }
                     leftover_capacity -= s.product_weights[ps[i]];
                     ps.erase(ps.begin() + i);
+                    --s.warehouses[warehouse].product_counts[ps[i]];
                     --i;
                 }
             }
             commands.insert(commands.end(), deliver_commands.begin(), deliver_commands.end());
-            drones.insert(std::make_pair(
-                    drone.first + 2*distance(w, o) + 2*commands.size(), drone.second));
+
+
+            for (int j = 0; j < w.size(); ++j) {
+                drones.insert(std::make_pair(
+                    drone_time + 2*distance(w[j], o) + 2*commands.size(), Value{drone_index, j}));
+            }
         }
     }
 
@@ -227,13 +275,7 @@ std::vector<Command> moho(Simulation s) {
 }
 
 std::vector<Command> doIt(Simulation s) {
-    if (s.warehouses.size() == 1) {
-        return moho(s);
-    }
-
-    std::vector<Command> commands;
-    commands.push_back(Load(0, 0, 0, 1));
-    return commands;
+    return moho(s);
 }
 
 int main() {
