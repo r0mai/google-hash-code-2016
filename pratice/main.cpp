@@ -1,8 +1,18 @@
 #include "stuff.h"
 
+struct Point {
+    int r, c;
+};
+
 struct Line {
     int r1, c1;
     int r2, c2;
+};
+
+struct RectangleCandidate {
+    int x, y; // bal felso
+    int size;
+    std::vector<Point> holes;
 };
 
 std::vector<Line> scanLine(const std::vector<std::string>& m) {
