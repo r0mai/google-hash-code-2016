@@ -205,15 +205,21 @@ std::vector<Command> moho(Simulation s) {
             int leftover_capacity = s.max_drone_load;
             for (int i = 0; i < ps.size(); ++i) {
                 if (leftover_capacity >= s.product_weights[ps[i]]) {
-                    commands.push_back(Load(drone.second, 0, ps[i], 1));
-                    deliver_commands.push_back(Deliver(drone.second, o.index, ps[i], 1));
+                    if (!deliver_commands.empty() && commands.back().product_id == ps[i]) {
+                        ++commands.back().product_count;
+                        ++deliver_commands.back().product_count;
+                    } else {
+                        commands.push_back(Load(drone.second, 0, ps[i], 1));
+                        deliver_commands.push_back(Deliver(drone.second, o.index, ps[i], 1));
+                    }
                     leftover_capacity -= s.product_weights[ps[i]];
                     ps.erase(ps.begin() + i);
                     --i;
                 }
             }
             commands.insert(commands.end(), deliver_commands.begin(), deliver_commands.end());
-            drones.insert(std::make_pair(drone.first + 2*distance(w, o), drone.second));
+            drones.insert(std::make_pair(
+                    drone.first + 2*distance(w, o) + 2*commands.size(), drone.second));
         }
     }
 
