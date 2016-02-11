@@ -1,4 +1,21 @@
-#include "stuff.h"
+#include <iostream>
+#include <list>
+#include <vector>
+#include <queue>
+#include <stack>
+#include <map>
+#include <set>
+#include <array>
+#include <tuple>
+#include <string>
+#include <unordered_map>
+#include <iomanip>
+#include <sstream>
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <iterator>
+#include <cassert>
 
 struct Command {
     int drone_id;
