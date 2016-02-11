@@ -186,9 +186,11 @@ int getPreferredWarehouse(Simulation s, const std::vector<int>& ps) {
             }
         }
     }
-    return std::max_element(
+    auto it = std::max_element(
             warehouse_score.begin(),
-            warehouse_score.end()) - warehouse_score.begin();
+            warehouse_score.end());
+    std::cerr << "warehouse_score = " << *it << std::endl;
+    return it - warehouse_score.begin();
 }
 
 struct Value {
@@ -221,6 +223,7 @@ std::vector<Command> moho(Simulation s) {
         auto& ps = o.products;
 
         while (!ps.empty()) {
+            std::cerr << "not empty" << std::endl;
             auto drone = *drones.begin();
             auto warehouse = getPreferredWarehouse(s, ps);
 
@@ -267,6 +270,10 @@ std::vector<Command> moho(Simulation s) {
             for (int j = 0; j < w.size(); ++j) {
                 drones.insert(std::make_pair(
                     drone_time + 2*distance(w[j], o) + 2*commands.size(), Value{drone_index, j}));
+            }
+            if (deliver_commands.empty()) {
+                std::cerr << "USER DRONE" << std::endl;
+                break;
             }
         }
     }
