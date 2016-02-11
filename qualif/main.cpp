@@ -178,7 +178,7 @@ Simulation read(std::istream& in = std::cin) {
 std::vector<Command> moho(Simulation s) {
     Warehouse& w = s.warehouses[0];
     for (Order& o : s.orders) {
-        o.score = ((long long)(distance(w, o)) << 32) + getWeigth(o, s);
+        o.score = (distance(w, o)) + ((long long)getWeigth(o, s) << 32);
     }
 
     std::sort(s.orders.begin(), s.orders.end(),
