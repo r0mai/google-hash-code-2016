@@ -136,7 +136,15 @@ Simulation read(std::istream& in = std::cin) {
     return s;
 }
 
+std::vector<Command> moho(Simulation s) {
+    return {};
+}
+
 std::vector<Command> doIt(Simulation s) {
+    if (s.warehouses.size() == 1) {
+        return moho(s);
+    }
+
     std::vector<Command> commands;
     commands.push_back(Load(0, 0, 0, 1));
     return commands;
