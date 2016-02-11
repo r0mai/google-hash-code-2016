@@ -229,12 +229,16 @@ std::vector<Command> moho(Simulation s) {
 
             int drone_time = -1;
             int drone_index = -1;
-            for (auto it = drones.begin(), end = drones.end(); it != end; ++it) {
+            auto it = drones.begin();
+            for (auto end = drones.end(); it != end; ++it) {
                 if (it->second.warehouse == warehouse) {
                     drone_index = it->second.drone;
                     drone_time = it->first;
                     break;
                 }
+            }
+            if (it == drones.end()) {
+                std::cerr << "PANIC" << std::endl;
             }
             for (auto it = drones.begin(); it != drones.end(); ) {
                 if (it->second.drone == drone_index) {
@@ -259,8 +263,8 @@ std::vector<Command> moho(Simulation s) {
                         deliver_commands.push_back(Deliver(drone_index, o.index, ps[i], 1));
                     }
                     leftover_capacity -= s.product_weights[ps[i]];
-                    ps.erase(ps.begin() + i);
                     --s.warehouses[warehouse].product_counts[ps[i]];
+                    ps.erase(ps.begin() + i);
                     --i;
                 }
             }
