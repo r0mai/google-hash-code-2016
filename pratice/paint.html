@@ -2,7 +2,7 @@
 <html>
 <head>
 <script language="javascript" type="text/javascript" src="jquery.js"></script>
-<script language="javascript" type="text/javascript" src="input/right_angle.js"></script>
+<script language="javascript" type="text/javascript" src="input/logo.js"></script>
 <style type="text/css">
 
 canvas {
@@ -20,7 +20,7 @@ var g = {
 	ctx: $('#canvas')[0].getContext("2d"),
 	height: rows,
 	width: cols,
-	scale: 6,
+	scale: 8,
 	original: original,
 	pixels: [],
 	down: false,
@@ -28,6 +28,7 @@ var g = {
 	pos: null,
 	rect: null,
 	mode: 'horz',
+	regions: [],
 };
 
 
@@ -35,6 +36,24 @@ function init() {
 	g.canvas.attr('width', g.width * g.scale);
 	g.canvas.attr('height', g.height * g.scale);
 }
+
+
+function drawRect(pos0, pos1, fill) {
+	var x0 = pos0.x;
+	var x1 = pos1.x;
+	var y0 = pos0.y;
+	var y1 = pos1.y;
+	var w = x1 - x0;
+	var h = y1 - y0;
+
+	if (fill) {
+		g.ctx.fillRect(x0 * g.scale, y0 * g.scale, w * g.scale, h * g.scale);
+	}
+	else {
+		g.ctx.strokeRect(x0 * g.scale, y0 * g.scale, w * g.scale, h * g.scale);
+	}
+}
+
 
 function redraw() {
 	g.ctx.clearRect(0, 0, g.width * g.scale, g.height * g.scale);
@@ -63,6 +82,17 @@ function redraw() {
 	for (var i = 0; i < g.original.length; ++i) {
 		var pos = g.original[i];
 		drawPixel(pos.x, pos.y, 0);
+	}
+
+	for (var i = 0; i < g.regions.length; ++i) {
+		var r = g.regions[i];
+		var pos0 = { x: r.orto, y: r.orto };
+		var pos1 = { x: r.orto + 1, y: r.orto + 1};
+		pos0[r.axis] = r.begin;
+		pos1[r.axis] = r.end;
+		var fs = { x: 'rgba(146, 202, 48, 0.5)', y: 'rgba(247, 10, 148, 0.5)' };
+		g.ctx.fillStyle = fs[r.axis];
+		drawRect(pos0, pos1, true);
 	}
 
 	if (g.down) {
@@ -175,7 +205,7 @@ function findValue(xs, value) {
 	}
 }
 
-function findLinearRegions(axis, ortoPos, xs) {
+function findLinearRegions(axis, orto, xs) {
 	if (xs.length == 0) { return []; }
 	var regions = [];
 
@@ -184,10 +214,11 @@ function findLinearRegions(axis, ortoPos, xs) {
 	var pushRegion = function() {
 		regions.push({
 			axis: axis,
-			ortoPos: ortoPos,
+			orto: Number(orto),
 			begin: xs[first],
 			end: xs[last] + 1,
-			length: xs[last] - xs[first] + 1
+			size: xs[last] - xs[first] + 1,
+			impact: xs[last] - xs[first] + 1
 		});
 	};
 
@@ -234,6 +265,56 @@ function findRegions() {
 
 function calcRegions() {
 	var regions = findRegions();
+	function cmpRegions(a, b) {
+		if (b.impact == a.impact) {
+			var s = { x: 1, y: 0 };
+			return s[b.axis] - s[a.axis];
+		}
+		return b.impact - a.impact;
+	};
+	regions.sort(cmpRegions);
+
+	var result = [];
+	var map = {};
+
+	function foreachPixel(region, func) {
+		var pos = { x: region.orto, y: region.orto };
+		for (var i = region.begin; i < region.end; ++i) {
+			pos[region.axis] = i;
+			var cont = func(pos);
+			if (!cont) { break; }
+		}
+	}
+
+	while (regions.length > 0) {
+		var	r = regions[0];
+		var impact = 0;
+		regions = regions.splice(1);
+		foreachPixel(r, function(pos) {
+			if (!map[pos.x] || !map[pos.x][pos.y]) {
+				++impact;
+			}
+			return true;
+		});
+		r.impact = impact;
+		if (impact > 0) {
+			if (regions.length > 0 && cmpRegions(regions[0], r) < 0) {
+				regions.push(r);
+				regions.sort(cmpRegions);
+				continue;
+			}
+
+			foreachPixel(r, function(pos) {
+				map[pos.x] = map[pos.x] || {};
+				map[pos.x][pos.y] = true;
+				return true;
+			});
+			result.push(r);
+		}
+	}
+
+	g.regions = result;
+	console.log(result.length);
 }
 
 
@@ -272,8 +353,8 @@ $('#canvas').on('mousemove', function(e){
 // -- main --
 
 init();
-redraw();
 calcRegions();
+redraw();
 
 });
 </script>
