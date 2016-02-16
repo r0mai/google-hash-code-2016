@@ -1,10 +1,10 @@
-Solutions for Google Hash Code 2016, Team Rainbow Dash
+# Solutions for Google Hash Code 2016, Team Rainbow Dash
 
 Team members:
-* Gida Pataki (@gidapataki)
-* Csongor Szabo (@zobertke)
-* Andras Banki-Horvath (@bhandras)
-* Andras Kucsma (@r0mai)
+* Gida Pataki ([@gidapataki](https://github.com/gidapataki))
+* Csongor Szabo ([@zobertke](https://github.com/zobertke))
+* Andras Banki-Horvath ([@bhandras](https://github.com/bhandras))
+* Andras Kucsma ([@r0mai](https://github.com/r0mai))
 
 We finished at 105th place.
 
