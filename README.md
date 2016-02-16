@@ -1,4 +1,5 @@
-# Solutions for Google Hash Code 2016, Team Rainbow Dash
+# Solutions for Google Hash Code 2016
+## Team Rainbow Dash
 
 Team members:
 * Gida Pataki ([@gidapataki](https://github.com/gidapataki))
